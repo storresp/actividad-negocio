@@ -19,5 +19,7 @@ public class Inventory {
     @Id
     private String id;
     private String playerId;
+
+    @Builder.Default
     private List<String> items = new ArrayList<>();
 }

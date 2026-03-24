@@ -40,6 +40,18 @@ public class PlayerService {
         return playerRepository.save(player);
     }
 
+    public Player debitCoins(String playerId, int amount) {
+        Player player = getPlayerById(playerId);
+        validatePlayerActive(player);
+
+        if (player.getCoins() < amount) {
+            throw new BusinessException("El jugador no tiene monedas suficientes");
+        }
+
+        player.setCoins(player.getCoins() - amount);
+        return playerRepository.save(player);
+    }
+
     public Player applyPurchase(String playerId, PurchaseRequest request) {
         Player player = getPlayerById(playerId);
 

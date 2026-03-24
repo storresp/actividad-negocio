@@ -28,19 +28,30 @@ public class PlayerController {
         return ResponseEntity.ok(playerService.getPlayerById(playerId));
     }
 
+    @GetMapping("/{playerId}/coins")
+    public ResponseEntity<Integer> getPlayerCoins(@PathVariable String playerId) {
+        return ResponseEntity.ok(playerService.getPlayerById(playerId).getCoins());
+    }
+
+    @PatchMapping("/{playerId}/coins/debit")
+    public ResponseEntity<Void> debitCoins(
+            @PathVariable String playerId,
+            @RequestParam int amount) {
+        playerService.debitCoins(playerId, amount);
+        return ResponseEntity.ok().build();
+    }
+
     @PatchMapping("/{playerId}/wallet/credit")
     public ResponseEntity<Player> creditCoins(
             @PathVariable String playerId,
-            @Valid @RequestBody CreditCoinsRequest request
-    ) {
+            @Valid @RequestBody CreditCoinsRequest request) {
         return ResponseEntity.ok(playerService.creditCoins(playerId, request.getAmount()));
     }
 
     @PostMapping("/{playerId}/purchases/apply")
     public ResponseEntity<Player> applyPurchase(
             @PathVariable String playerId,
-            @Valid @RequestBody PurchaseRequest request
-    ) {
+            @Valid @RequestBody PurchaseRequest request) {
         return ResponseEntity.ok(playerService.applyPurchase(playerId, request));
     }
 }

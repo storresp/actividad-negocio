@@ -34,18 +34,12 @@ public class PurchaseService {
             throw new PlayerNotFoundException("Player not found with id: " + playerId);
         }
 
-        // Consultar al player-service: obtener monedas
-        Integer coins = playerClient.getPlayerCoins(playerId);
+        // Aplicar la compra directamente en el player-service (valida saldo, descuenta
+        // y añade al inventario del player)
+        playerClient.applyPurchase(playerId, itemId, 1, item.getPrice());
 
-        // Validar monedas suficientes
-        if (coins == null || coins < item.getPrice()) {
-            throw new InsufficientCoinsException("Not enough coins to buy item: " + itemId);
-        }
-
-        // Descontar monedas vía REST
-        playerClient.debitCoins(playerId, item.getPrice());
-
-        // Registrar la compra
+        // Registrar la transacción de compra localmente en el historial del
+        // store-service
         Purchase purchase = Purchase.builder()
                 .playerId(playerId)
                 .itemId(itemId)
@@ -53,14 +47,5 @@ public class PurchaseService {
                 .timestamp(LocalDateTime.now())
                 .build();
         purchaseRepository.save(purchase);
-
-        // Actualizar inventario
-        Inventory inventory = inventoryRepository.findByPlayerId(playerId)
-                .orElse(Inventory.builder()
-                        .playerId(playerId)
-                        .build());
-        
-        inventory.getItems().add(item.getId());
-        inventoryRepository.save(inventory);
     }
 }
