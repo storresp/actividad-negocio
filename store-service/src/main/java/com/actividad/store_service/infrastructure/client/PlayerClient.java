@@ -48,4 +48,29 @@ public class PlayerClient {
                 .toBodilessEntity()
                 .block();
     }
+
+    public int getPlayerCoins(String playerId) {
+        return this.webClient.get()
+                .uri("/players/{id}/coins", playerId)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, response -> {
+                    throw new PlayerNotFoundException("Player not found with id: " + playerId);
+                })
+                .bodyToMono(Integer.class)
+                .block();
+    }
+
+    public void debitCoins(String playerId, int amount) {
+        this.webClient.patch()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/players/{id}/coins/debit")
+                        .queryParam("amount", amount)
+                        .build(playerId))
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, response -> {
+                    throw new RuntimeException("Error or insufficient coins for player: " + playerId);
+                })
+                .toBodilessEntity()
+                .block();
+    }
 }

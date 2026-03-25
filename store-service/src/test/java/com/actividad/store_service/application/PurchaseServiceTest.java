@@ -1,8 +1,6 @@
 package com.actividad.store_service.application;
 
-import com.actividad.store_service.domain.Inventory;
 import com.actividad.store_service.domain.Item;
-import com.actividad.store_service.exception.InsufficientCoinsException;
 import com.actividad.store_service.exception.ItemNotFoundException;
 import com.actividad.store_service.exception.PlayerNotFoundException;
 import com.actividad.store_service.infrastructure.client.PlayerClient;
@@ -16,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -58,20 +55,13 @@ class PurchaseServiceTest {
         // Arrange
         when(itemRepository.findById(sampleItem.getId())).thenReturn(Optional.of(sampleItem));
         when(playerClient.playerExists(playerId)).thenReturn(true);
-        when(playerClient.getPlayerCoins(playerId)).thenReturn(150);
-        
-        Inventory inventory = new Inventory();
-        inventory.setPlayerId(playerId);
-        inventory.setItems(new ArrayList<>());
-        when(inventoryRepository.findByPlayerId(playerId)).thenReturn(Optional.of(inventory));
 
         // Act
         purchaseService.buyItem(playerId, sampleItem.getId());
 
         // Assert
-        verify(playerClient).debitCoins(playerId, sampleItem.getPrice());
+        verify(playerClient).applyPurchase(playerId, sampleItem.getId(), 1, sampleItem.getPrice());
         verify(purchaseRepository).save(any());
-        verify(inventoryRepository).save(any());
     }
 
     @Test
@@ -93,7 +83,7 @@ class PurchaseServiceTest {
 
         // Act & Assert
         assertThrows(PlayerNotFoundException.class, () -> purchaseService.buyItem(playerId, sampleItem.getId()));
-        verify(playerClient, never()).getPlayerCoins(playerId);
+        verify(playerClient, never()).applyPurchase(anyString(), anyString(), anyInt(), anyInt());
         verifyNoInteractions(purchaseRepository);
     }
 
@@ -102,11 +92,11 @@ class PurchaseServiceTest {
         // Arrange
         when(itemRepository.findById(sampleItem.getId())).thenReturn(Optional.of(sampleItem));
         when(playerClient.playerExists(playerId)).thenReturn(true);
-        when(playerClient.getPlayerCoins(playerId)).thenReturn(50); // Less than item price (100)
+        doThrow(new RuntimeException("Error o saldo insuficiente al aplicar compra para el jugador: " + playerId))
+                .when(playerClient).applyPurchase(playerId, sampleItem.getId(), 1, sampleItem.getPrice());
 
         // Act & Assert
-        assertThrows(InsufficientCoinsException.class, () -> purchaseService.buyItem(playerId, sampleItem.getId()));
-        verify(playerClient, never()).debitCoins(anyString(), anyInt());
+        assertThrows(RuntimeException.class, () -> purchaseService.buyItem(playerId, sampleItem.getId()));
         verifyNoInteractions(purchaseRepository);
     }
 }

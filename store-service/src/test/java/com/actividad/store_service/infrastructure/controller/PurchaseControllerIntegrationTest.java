@@ -59,7 +59,6 @@ class PurchaseControllerIntegrationTest {
 
         // Mock external player service response
         when(playerClient.playerExists(playerId)).thenReturn(true);
-        when(playerClient.getPlayerCoins(playerId)).thenReturn(500);
 
         PurchaseRequest request = PurchaseRequest.builder()
                 .playerId(playerId)
@@ -72,6 +71,6 @@ class PurchaseControllerIntegrationTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
 
-        verify(playerClient).debitCoins(playerId, 200);
+        verify(playerClient).applyPurchase(playerId, item.getId(), 1, item.getPrice());
     }
 }
